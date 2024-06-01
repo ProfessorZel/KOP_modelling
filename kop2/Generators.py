@@ -1,10 +1,11 @@
 ﻿import random
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABCMeta, abstractmethod
 from itertools import combinations
+
 import numpy as np
 
 
-class EdgesGenerator():
+class EdgesGenerator:
     __metaclass__ = ABCMeta
 
     @abstractmethod
@@ -57,19 +58,19 @@ def random_n_edges(vertices: list, number_of_edges: int):
     while number_of_edges > len(z):
         v = int(np.random.random() // x)
         vv = int(np.random.random() // x)
-        ребро = (vertices[v], vertices[vv])
-        # print(len(z), ребро, ребро[::-1])
+        edge = (vertices[v], vertices[vv])
+        # print(len(z), edge, edge[::-1])
         if v == vv:
             # print("петля!")
             # raise SystemExit("loop")
             continue
-        if ребро in z or ребро[::-1] in z:
+        if edge in z or edge[::-1] in z:
             # print("повторение!")
             # raise SystemExit("repeat!")
             continue
-        # print("новое ребро","z=", len(z), ребро)
-        z.append(ребро)
-        yield ребро  # print(z)
+        # print("новое edge","z=", len(z), edge)
+        z.append(edge)
+        yield edge  # print(z)
 
 
 class CircleGraphGenerator(EdgesGenerator):
@@ -77,12 +78,13 @@ class CircleGraphGenerator(EdgesGenerator):
         self.neighbours_count = neighbours_count
 
     def generate_edges(self, vertices: list):
-        return локтевые_соседи(vertices, self.neighbours_count // 2)
+        return closest_neighbours(vertices, self.neighbours_count // 2)
 
 
-def локтевые_соседи(вершины, k05):  # это все пары неориентированного графа или ориентированного непараллельного
-    n = len(вершины)
-    for i, ev in enumerate(вершины):
-        for j in range(i + 1, i + k05 + 1):
-            v = вершины[j % n]
-            yield ev, v  # создаетcя кортеж из пары x-y: (x,y)
+def closest_neighbours(vertices: list,
+                       k05):  # это все пары неориентированного графа или ориентированного непараллельного
+    n = len(vertices)
+    for i, ev in enumerate(vertices):
+        for j in range(i + 1, i + k05 + 1):  # TODO this works with numbers not with list
+            v = vertices[j % n]
+            yield ev, v  # создается кортеж из пары x-y: (x,y)
