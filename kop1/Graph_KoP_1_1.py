@@ -1,90 +1,90 @@
 # КоП_1 "Моделирование малых систем после итуационного анализа объектов и процессов
 # в отдельном выделенном бизнес-процессе организации (строительной сферы)."
 # Триадная инфографическая модель подпроцесса работы экспедитора-снабженца в бизнес-процессе "Логистика строительной компании"
+import json
+from itertools import combinations
 
 # Библиотеки для доп.типов данных,доп.функционала, визуализации данных и организации работы с СОД (в данном случае- файловая система компьютера)
 import networkx as nx
 import numpy as np
-import re
 import matplotlib.pyplot as plt
-from pathlib import Path  # ставьте Питон 3.4. и выше
+from pathlib import Path
 
 
-# универсальная функция_____
-def все_пары(вершины):
-    for i, x in enumerate(вершины):
-        for j, y in enumerate(вершины):
-            if i != j:
-                yield x, y  # 1.yield. Возвращается пара x,y как кортеж(x,y). В итоге создается кортеж ребер.
+def all_pairs(vertices):
+    return combinations(vertices, 2)
 
+result_folder = Path('./Результат_КоП1')
+result_folder.mkdir(parents=True, exist_ok=True)  # 2.работа с файловой структурой средствами ОС.
+f = open('./metadata.json', 'r+',encoding='utf-8')
+metadata = json.load(f)
+print(metadata)
+wight = metadata['metadata']['size']['wight']
+height = metadata['metadata']['size']['height']
+dpi = metadata['metadata']['dpi']
+fileName = metadata['metadata']['file_name']
+monads = metadata['monads']
+# effects =
+triad = nx.Graph(directed=True)  # 7. Работа со специальными типами данных, не явл. системными в Python.
+triad.add_nodes_from(monads)
+labels = {}
+for effect in metadata['effects']:
+    color = effect['color'] if "color" in effect else "black"
+    triad.add_edge(effect['actor'], effect['object'], color=color)
+    labels[(effect['actor'], effect['object'])] = effect['effect']
 
-# Работа с СОД:организация I/O процессов______
-папка_результатов = Path(
-    './Результат_КоП1')  # папка, в которой рез-ты работы программы. Корневой здесь является папка, в которой исходный код, то есть данная программа.
-папка_результатов.mkdir(parents=True, exist_ok=True)  # 2.работа с файловой структурой средствами ОС.
-текст = [строчка.strip() for строчка in open('./text.txt', 'r+',
-                                             encoding='utf-8')]  # 3. Работа с внешним источником данных. 4.list comprehension списковое включение- поместить в список [выражение(что сделать со взятым?) контекст (что взять?)]
-# Проверка качества данных в соответствии с созданным форматом(!) по 2-м направления: наличие и корректность формата представления. Метаданные,Заголовок КоП и Целевую функцию(задачу) 
-заголовки = []
-for i in range(0, 5, 2):
-    if текст[i].count('Метаданные:') and len(текст[i + 1]) >= 21:  # Обработка метаданных(мин.допустим.длина) #4.Работа с вложенными логическими операторами
-        горизонталь, вертикаль = re.search(r'(\d{3,5})x(\d{3,5})', текст[i + 1]).group(1, 2)
-        плотность = re.search(r'(\d{2,4})dpi', текст[i + 1]).group(
-            1)  # 5. работа с регулярными выражениями(шаблонами в строках)
-        горизонталь, вертикаль, плотность = int(горизонталь), int(вертикаль), int(плотность)
-        имя_файла = re.search(r'\w+\.\w{3}', текст[i + 1]).group()
+for i, effect_result in enumerate(metadata['effect_results']):
+    key = effect_result['object'] + " - " + effect_result['result']
+    triad.add_node(key)
+    color = effect_result['color'] if "color" in effect_result else "black"
+    triad.add_edge(effect_result['actor'], key, color=color)
+    # labels[(effect_result['actor'], key)] = effect_result['result']
 
-        if вертикаль == False or горизонталь == False or плотность == False or имя_файла == False:
-            raise SystemExit("Код(1_метаданные). Ошибка описания метаданных!")
-        continue
-    elif (текст[i].count('Заголовок:') or текст[i].count('Управляющая функция:')) and len(текст[i + 1]) >= int(
-            16):  # 10.38*7 в среднем(дисперсия высока). Мин.осмысленная фраза (например):"Минимизация цены"(16 символов)
-        заголовки.append(текст[i + 1])
-        continue
-    raise SystemExit("Код(1_заголовки). Ошибка формата описания входных данных!")
-# Выбор основной структуры (и типа)данных инфографической модели
-# Cоздание объекта__________
-монады = str(текст[текст.index("Монады:") + 1]).rsplit('; ')  # 6.Итеративность без цикла. Списковое включение
-воздействия = str(текст[текст.index("Воздействия монад:") + 1]).rsplit('; ')
-триада = nx.DiGraph()  # 7. Работа со специальными типами данных, не явл. системными в Python.
-триада.add_edges_from(все_пары(монады))
-# Задать ребра результатов Воздействий и Нагружений (и одновременно вершины) в графе 
-for i, x in enumerate(монады):
-    for j in range(1, 5):
-        триада.add_edge(x, str(i * 3 + i + j), weight=7, capacity=15, length=342.7)
+for i, load_result in enumerate(metadata['load_results']):
+    key = str(load_result['load']) + " - " + load_result['result']
+    triad.add_node(key)
+    color = load_result['color'] if "color" in load_result else "black"
+    triad.add_edge(load_result['actor'], key, color=color)
+    # labels[(load_results['actor'], key)] = load_results['result']
+
 # Параметрическая подготовка к визуализации ифгр-модели_________________
-plt.figure(figsize=(int(горизонталь / плотность), int(вертикаль / плотность)), dpi=плотность)  # размер в дюймах
+plt.figure(figsize=(wight, height), dpi=dpi)  # размер в дюймах
 options = {'node_color': "green",  # цвета вершин
-    'node_size': 5000,  # размер вершин
-    # 'width': 1,  # толщина линии ребер
-    'arrowstyle': '-|>',  # стиль стрелок для орграфа
-    'arrowsize': 16,  # размер стрелки
-    'edge_color': "#000000",  # 'k' 'black' цвета ребер
-}
-# Оформление текстовой части ифгр-модели.
-# Задать заголовки в макете отображения модели_____________________________
-plt.suptitle(заголовки[0]).set_fontsize(16)
-plt.title(заголовки[1]).set_fontsize(14)
-воздействия = str(текст[текст.index("Воздействия монад:")]) + "\n"
-воздействия += "\n".join(str(текст[текст.index("Воздействия монад:") + 1]).rsplit('; '))
-результаты = "\n".join(текст[текст.index("Результаты воздействий:"):текст.index("Результаты нагружений:"):])
-нагружения = "\n".join(текст[текст.index("Результаты нагружений:")::])  # 9 Срезы (сложные срезы)
-plt.annotate(воздействия, xy=(0, 0), xytext=(-0.74, 1.28), color='green')  # -0.21, 0.39
-plt.annotate(результаты, xy=(0, 0), xytext=(-1.29, -1.29), color='red')  # -1.29, -0.52
-plt.annotate(нагружения, xy=(0, 0), xytext=(0, -1.29), color='blue')  # -0.05, -0.52
-# Структурная подготовка к визуализации ифгр-модели_________________
+           'node_size': 5000,  # размер вершин
+           # 'width': 1,  # толщина линии ребер
+           'arrowstyle': '-|>',  # стиль стрелок для орграфа
+           # 'arrowsize': 16,  # размер стрелки
+           # 'edge_color': "#000000",  # 'k' 'black' цвета ребер
+           }
+
+plt.suptitle(metadata['function']).set_fontsize(16)
+plt.title(metadata['title']).set_fontsize(14)
+
 # 10  Подграф.
-воздействия = set(триада) - set(монады)
-макет = nx.circular_layout(триада.subgraph(воздействия))
-макет[монады[0]] = np.array([0.20, 0.20])  # 11 массив (тип данных)
-макет[монады[1]] = np.array([-0.20, 0])
-макет[монады[2]] = np.array([0.20, -0.20])
+print(triad, monads)
+effect = set(triad) - set(monads)
+макет = nx.circular_layout(triad.subgraph(effect))
+макет[monads[0]] = np.array([0.4, 0.4])
+макет[monads[1]] = np.array([-0.4, 0])
+макет[monads[2]] = np.array([0.4, -0.4])
+
 # Функциональная подготовка к визуализации ифгр-модели_________________
-nx.draw(триада, pos=макет, with_labels=True, font_weight='bold', arrows=True, connectionstyle='arc3, rad= 0.1',
+edges,colors = zip(*nx.get_edge_attributes(triad,'color').items())
+nx.draw(triad, edgelist=edges, edge_color=colors, pos=макет,
+        with_labels=True,
+        # font_weight='bold',
+        arrows=True,
+        connectionstyle='arc3, rad= 0.1',
         **options)
+nx.draw_networkx_edge_labels(
+    triad,
+    pos=макет,
+    edge_labels=labels,
+    font_color='red'
+)
 plt.show()
 # Работа с СОД:организация I/O процессов______#11 работа с операционной системой
-итог = Path(папка_результатов, имя_файла)
+result_file = Path(result_folder, fileName)
 # Реализация ифгр-модели (отчуждение из среды разработки в электронный документ_________________
-plt.savefig(итог)
-print("Граф успешно сохранен в", итог, "в формате png")
+plt.savefig(result_file)
+print("Граф успешно сохранен в", result_file, "в формате png")
