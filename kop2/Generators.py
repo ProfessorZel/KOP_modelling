@@ -88,3 +88,26 @@ def closest_neighbours(vertices: list,
         for j in range(i + 1, i + k05 + 1):  # TODO this works with numbers not with list
             v = vertices[j % n]
             yield ev, v  # создается кортеж из пары x-y: (x,y)
+
+
+class AdvancedCircleGraphGenerator(EdgesGenerator):
+    def __init__(self, neighbours_count: int):
+        self.neighbours_count = neighbours_count
+
+    def generate_edges(self, vertices: list):
+        return advanced_closest_neighbours(vertices, self.neighbours_count)
+
+
+def advanced_closest_neighbours(vertices: list, k):
+    n = len(vertices)
+    if n % 2 == 0:
+        for i, ev in enumerate(vertices):
+            for j in range(1, k // 2 + 1):
+                v = vertices[(i + j) % n]
+                yield ev, v
+    else:
+        for i, ev in enumerate(vertices[:-1]):
+            for j in range(1, k // 2 + 1):
+                v = vertices[(i + j) % n]
+                yield ev, v
+        yield vertices[0], vertices[-1]

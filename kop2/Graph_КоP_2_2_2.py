@@ -4,7 +4,7 @@ import numpy as np
 import seaborn as sns
 
 from Generators import FullGraphGenerator, ProbabilityGraphGenerator, ProbabilitySetNGraphGenerator, \
-    CircleGraphGenerator
+    CircleGraphGenerator, AdvancedCircleGraphGenerator
 from kop2.GraphBuilder import GraphBuilder
 from kop2.Mutators import WeaveGraphMutator
 
@@ -19,6 +19,8 @@ def print_graph_meta(graph: nx.Graph):
         print('Данный граф ', graph.name, ' является связным')
     else:
         print('Данный граф ', graph.name, ' является несвязным')
+    print("Коэффициент кластеризации:", nx.clustering(graph))
+    print("Коэффициент средней кластеризации:", nx.average_clustering(graph))
 
 
 def retrieveArguments():
@@ -92,9 +94,10 @@ def main():
     print_graph_meta(setProbabilityFullGraph)
 
     # 5. Кольцевой регулярный граф_________________________________________
-    circleGraphGenerator = CircleGraphGenerator(neighbour_count)
+    # circleGraphGenerator = CircleGraphGenerator(neighbour_count)
+    advancedCircleGraphGenerator = AdvancedCircleGraphGenerator(neighbour_count)
     circleRegularGraph = GraphBuilder(node_count).set_name("КСТ").set_edges_generator(
-        circleGraphGenerator).generate_graph()
+        advancedCircleGraphGenerator).generate_graph()
     print_graph_meta(circleRegularGraph)
 
     # 6. Кольцевой вероятностный граф W-S ________________________________________
