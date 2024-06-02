@@ -85,7 +85,7 @@ def closest_neighbours(vertices: list,
                        k05):  # это все пары неориентированного графа или ориентированного непараллельного
     n = len(vertices)
     for i, ev in enumerate(vertices):
-        for j in range(i + 1, i + k05 // 2 + 1):  # TODO this works with numbers not with list
+        for j in range(i + 1, i + k05 // 2 + 1):
             v = vertices[j % n]
             yield ev, v  # создается кортеж из пары x-y: (x,y)
 

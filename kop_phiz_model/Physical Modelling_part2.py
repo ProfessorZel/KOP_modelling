@@ -3,16 +3,15 @@ import numpy as np
 from scipy.signal import correlate2d
 from Cell2D import Cell2D, draw_array
 #from Physical_Modelling_01 import Diffusion, draw_array ReactionDiffusion
-import time
 import random
 
 
-def add_island(a, повыш_конц=0.1, масштаб=20):
+def add_island(a, inc_coeff=0.1, scale=20):
     n, m = a.shape 
-    radius = min(n, m) // масштаб # вводим размер объекта("острова"), отмасштабированного по рамерам матрицы взаимодействия A и В.
+    radius = min(n, m) // scale # вводим размер объекта("острова"), отмасштабированного по рамерам матрицы взаимодействия A и В.
     i = n//2 #находим центр матрицы взаимодействия A и В ( i и j). если i|j нечетное, то с малой погрешностью.
     j = m//2
-    a[i-radius:i+radius, j-radius:j+radius] += повыш_конц # повышаем концентрацию B на "острове" на 10%
+    a[i-radius:i+radius, j-radius:j+radius] += inc_coeff # повышаем концентрацию B на "острове" на 10%
 # прокомментировать последнюю строку функции. Что это за конструкция языка Питон?
 
 class ReactionDiffusion(Cell2D):
@@ -22,15 +21,15 @@ class ReactionDiffusion(Cell2D):
                        [ .2, -1, .2],
                        [.05, .2, .05]]) # Ядро автомата (аналогия с оп.Набла/Лапласа)
 
-    def __init__(self, n, m, params, шум=0.21):
+    def __init__(self, n, m, params, noize=0.21):
 #Инициализация атрибутов класса. [n, m]: двумерный массив(матрица) взаимодействия для A и В.
         super().__init__(n, m)
         self.params = params # кортеж (ra, rb, f, k). (ra=Da,rb=Db в диф.ур-е диффузии)
         self.array1 = np.ones((n, m), dtype=float)#массив концентрации А. Конц.максимальна=1.0 во всех эл-тах массива
-        self.array2 = шум * np.random.random((n, m))#массив концентрации В. Конц.случайна в диапаз.[0;шум) во всех эл-тах массива
+        self.array2 = noize * np.random.random((n, m))#массив концентрации В. Конц.случайна в диапаз.[0;шум) во всех эл-тах массива
 
 #шум-число для задания диапазона концентрации. Его физ.смысл: от отсутствия до 10% концентрации.
-        add_island(self.array2) #создается "остров" (в середине  массива) с более высокой заданной концентрацией
+        add_island(self.array2)  #создается "остров" (в середине  массива) с более высокой заданной концентрацией
 
     def step(self):#обновление массивов. Один временной шаг процесса моделирования. Дискретизация модели.
   
