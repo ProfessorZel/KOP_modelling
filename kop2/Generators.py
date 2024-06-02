@@ -78,14 +78,14 @@ class CircleGraphGenerator(EdgesGenerator):
         self.neighbours_count = neighbours_count
 
     def generate_edges(self, vertices: list):
-        return closest_neighbours(vertices, self.neighbours_count // 2)
+        return closest_neighbours(vertices, self.neighbours_count)
 
 
 def closest_neighbours(vertices: list,
                        k05):  # это все пары неориентированного графа или ориентированного непараллельного
     n = len(vertices)
     for i, ev in enumerate(vertices):
-        for j in range(i + 1, i + k05 + 1):  # TODO this works with numbers not with list
+        for j in range(i + 1, i + k05 // 2 + 1):  # TODO this works with numbers not with list
             v = vertices[j % n]
             yield ev, v  # создается кортеж из пары x-y: (x,y)
 
