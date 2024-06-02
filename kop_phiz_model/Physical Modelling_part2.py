@@ -4,6 +4,7 @@ from scipy.signal import correlate2d
 from Cell2D import Cell2D, draw_array
 #from Physical_Modelling_01 import Diffusion, draw_array ReactionDiffusion
 import time
+import random
 
 
 def add_island(a, повыш_конц=0.1, масштаб=20):
@@ -23,16 +24,20 @@ class ReactionDiffusion(Cell2D):
 
     def __init__(self, n, m, params, шум=0.21):
 #Инициализация атрибутов класса. [n, m]: двумерный массив(матрица) взаимодействия для A и В.
+        super().__init__(n, m)
         self.params = params # кортеж (ra, rb, f, k). (ra=Da,rb=Db в диф.ур-е диффузии)
         self.array1 = np.ones((n, m), dtype=float)#массив концентрации А. Конц.максимальна=1.0 во всех эл-тах массива
         self.array2 = шум * np.random.random((n, m))#массив концентрации В. Конц.случайна в диапаз.[0;шум) во всех эл-тах массива
-#шум-число для задания диапазона концентрации. Его физ.смысл: от отсутствия до 10% концентрации.      
+
+#шум-число для задания диапазона концентрации. Его физ.смысл: от отсутствия до 10% концентрации.
         add_island(self.array2) #создается "остров" (в середине  массива) с более высокой заданной концентрацией
 
     def step(self):#обновление массивов. Один временной шаг процесса моделирования. Дискретизация модели.
+  
         #1-Прокомментировать работу функции !
         A = self.array1
         B = self.array2
+
         ra, rb, f, k = self.params
         #ra- скорость диффузии  А (коэффициент диффузии)
         #rb-скорость диффузии  B. Зависит от модели, здесь - половина от ra
@@ -40,15 +45,15 @@ class ReactionDiffusion(Cell2D):
         #k-частота удаления (расщепления) В (для контроля/баланса быстроты удаления В из модель-системы)
 
         options = dict(mode='same', boundary='wrap') # для функции correlate2d
-
+        # изменение цвета ячеки
         cA = correlate2d(A, self.kernel, **options)#применение диффузионного ядра к каждому эл-ту в А и B
         cB = correlate2d(B, self.kernel, **options)
-        
+        # скорость реакции
         reaction = A * B**2 # пропорции реагирования/взаимодействия А и В в данном эксперименте.
 #Зачем вводится данный объект в код?
-        self.array1 += ra * cA - reaction + f * (1-A)
+        self.array1 += ra * random.random() * cA - reaction + f * (1-A)
 #Прокомментировать физический смысл данных 2 строк кода
-        self.array2 += rb * cB + reaction - (f+k) * B
+        self.array2 += rb * random.random() * cB + reaction - (f+k) * B
         #ra * cA и  rb * cB - скорости диффузий из/в каждой ячейке cA, cB
 # что (А или В) в моделируемой реакции потребляется, а что производится ?
 # прокомментируйте f*(1-A), если f-скорость (интенсивность) подачи А в модель-систему
@@ -58,9 +63,8 @@ class ReactionDiffusion(Cell2D):
         
      
     def draw(self):#вычерчивание ячеек модель-системы.
-#Прокомментировать работу объекта OPTIONS
-        options = dict(interpolation='bicubic', 
-                       vmin=None, vmax=None)
+        # Прокомментировать работу объекта OPTIONS
+        options = dict(interpolation='bicubic', vmin=None, vmax=None)
         
         draw_array(self.array1, cmap='Reds', **options)     
         draw_array(self.array2, cmap='Purples', **options) #lanczos bicubic
@@ -76,32 +80,22 @@ params2 = 0.9, 0.2, 0.0545, 0.062 # "кораллы": цепочки, узоры
 params3 = 0.2, 0.9, 0.021, 0.012  # полная диффузия с диссоциацией химического типа
 params4 = 0.2, 0.9, 0.0545, 0.062   # "звезда": диффузия с фазовым переходом
 params5 = 0.2, 0.9, 0.078, 0.038 # "чернильное пятно" :обратимые реакциии с полной диссоциацией 
+params6 = 0.5, 0.65, 0.067, 0.020 #  модель "смешивание и удаление жидкостей"
+params7 = 0.5, 0.65, 0.018, 0.0756 # модель "неполного смешивания двух жикдкостей"
 
-st=1900
-rd = ReactionDiffusion(n=100, m=100, params=params5) # размер матрицы 100х100, остров 20%: 5х5
+iterations = 400
+rd = ReactionDiffusion(n=100, m=100, params=params1) # размер матрицы 100х100, остров 20%: 5х5
 
-plt.ion() # включить интерактивный режим
-for i in range(st): # Отображение состояний заданном количестве
+plt.ion() 
+for i in range(iterations): # Отображение состояний заданном количестве
     plt.clf()
     rd.draw() # Отображение текущего состояния
     rd.step() # Выполнение одного временного шага моделирования диффузии
     
-    plt.annotate("Состояние_"+str(i+1), xy=(0, 0), xytext=(-0.8, -0.8), color='k') # Добавление аннотации с номером текущего состояния
+    plt.annotate("Состояние_"+str(i+1), xy=(0, 0), xytext=(-0.8, -4), color='k') # Добавление аннотации с номером текущего состояния
     plt.axis('equal') # Установка одинаковых интервалов по осям X и Y
-    plt.savefig(f'pic{i}.jpg') #Сохранение изображения
-    # дать возможность пакету matplotlib обработать свои внутренние события,
-    # том числе и те, что отвечают за перерисовку окна
+    # plt.savefig(f'pic{i}.jpg') #Сохранение изображения
     plt.gcf().canvas.flush_events()
-    time.sleep(0)
-    plt.ioff() 
+    # time.sleep(0)
+plt.ioff()
 plt.show()
-
-
-"""#2-Добавьте анимацию.
-#rd.animate(10)
-for i in range(12):
-    rd.step()
-    rd.draw()
-    plt.annotate("Состояние_"+str(i+1), xy=(0, 0), xytext=(-0.8, -0.8), color='k')
-    plt.axis('equal') 
-    plt.show()"""
